@@ -2,34 +2,52 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+mpl.rcParams['xtick.direction'] = 'in'
+mpl.rcParams['ytick.direction'] = 'in'
+mpl.rcParams['xtick.top'] = True
+mpl.rcParams['ytick.right'] = True
 import os
 import sys
 import math
 from scipy import signal
-
-from file_converter import itx_to_txt_converter
+from scipy import stats
+#from file_converter import itx_to_txt_converter
 from Kaiser_Window_Design import Kaiser_FIR, Three_Stage_Decimation
 
 # specifies the location of the raw data    
-path_raw = "/Users/dadhikar/Desktop/rawdata/"
+#path_raw = "/Users/dadhikar/Desktop/rawdata/"
 # specifies the file location for the converted text file
-path_text = "/Users/dadhikar/Desktop/rawdata/"
+input_dir= "/Users/dadhikar/Downloads/Experiment_104/Thermal_noise_D2"
+#path_text = "/Users/dadhikar/Desktop/rawdata/"
 # Directory for estimted power spectral density
-path_psd = "/home/dadhikar/Desktop/__CuIr2S4_V2__/Thermal noise/psd/"
+output_dir = "/Users/dadhikar/Downloads/Experiment_104/PSD_cooling"
+#path_psd = "/home/dadhikar/Desktop/__CuIr2S4_V2__/Thermal noise/psd/"
 # converts igor file from noise measurement into text file
-itx_to_txt_converter(path_raw, path_text)
+#itx_to_txt_converter(path_raw, path_text)
 #sys.exit('stop here!')
-
-#file_list = sorted(os.listdir(path_text))
+#file_list = sorted(os.listdir(input_dir))
 #print('-'*25)
 #print('The file list: ', file_list)
 #print('-'*25)
+#sys.exit('stop here!')
 
-print('Enter the name of the file to read data from: ')
-file_to_read = input()
-print('-'*25)
+file_to_read = input('Enter the name of the file to read data from >>  ')
 #reading time, vx and vy from the file 
-time, vx, vy = np.loadtxt(path_text+os.sep+file_to_read, skiprows=1,usecols = [0,1,2], unpack=True)
+time, vx, vy = np.loadtxt(input_dir + os.sep + file_to_read, skiprows=1,usecols = [0,1,2], unpack=True)
+
+
+#Plotting time series
+#fig, ax = plt.subplots(1,1, figsize=(5,5), dpi= 150)
+#ax.plot(time, vx, c ="r", label = "Signal plus background")
+#ax.plot(time, vy, c="g", label= "Background only")
+#ax.set_xlabel('t (s)',  fontsize=15)
+#ax.set_ylabel(r'$\Delta V (* 10 ^{-6} V) $', fontsize=15)
+#ax.set_xlim(0.001,1)
+#ax.set_ylim(10e-14, 10e-1)
+#ax.set_facecolor('xkcd:salmon')
+#ax.legend(loc ='best')
+#plt.show()
+#sys.exit(-1)  
 
 # Remove any trend present on  vx and vy fluctuations.
 vx = signal.detrend(vx, axis=-1, type='linear', bp=0)
@@ -46,26 +64,6 @@ for i in range(len(time)):
     
 FileToWrite.close()   
 """
-
-
-#Plotting time series
-fig, ax = plt.subplots(1,1, figsize=(7,7), dpi= 150)
-ax.plot(time, vx, c ="r", label = r"Signal plus background")
-ax.plot(time, vy, c="g", label= r"Background only")
-ax.set_xlabel('t (s)',  fontsize=15)
-ax.set_ylabel(r'$\Delta V (* 10 ^{-6} V) $', fontsize=15)
-#ax.set_xlim(0.001,1)
-#ax.set_ylim(10e-14, 10e-1)
-#ax.set_title("")
-ax.set_facecolor('xkcd:salmon')
-ax.set_facecolor((1.0, 0.47, 0.42))
-ax.legend()
-mpl.rcParams['xtick.direction'] = 'in'
-mpl.rcParams['ytick.direction'] = 'in'
-mpl.rcParams['xtick.top'] = True
-mpl.rcParams['ytick.right'] = True
-plt.show()
-#sys.exit(-1)  
 
 # Getting vx (signal + background) and vy (background only) after decimation
 vx = Three_Stage_Decimation(vx)
@@ -99,25 +97,20 @@ def Power_Spectrum(x):
 fx, Sx = Power_Spectrum_Density(vx) 
 # spectral density estimation form vy data
 fy, Sy = Power_Spectrum_Density(vy)
-
+#print(fx)
+#sys.exit()
 S = abs( Sx - Sy )  # Power spectral density of the sample signal
 
 # Calculating normalized spectrum
-print("Enter the value of oscillating voltage: ")
-print('-'*25)
-vosc = float(input())
-print('-'*25)
-print("Enter the value of balancing resistance: ")
-print('-'*25)
-Rb = float(input())
-print('-'*25)
+vosc = float(input("Enter the value of oscillating voltage >>  "))
+Rb = float(input("Enter the value of balancing resistance >>  "))
 
 # Gives the oscillating voltage drop in the sample
 vs = vosc/(1 + (1000./Rb))
 # Calculates the normalized spectrum density   
 S_n = S/vs**2               
 # Plotting spectral density
-fig, ax = plt.subplots(1,1, figsize=(7, 7), dpi= 150)
+fig, ax = plt.subplots(1,1, figsize=(5, 5), dpi= 150)
 ax.loglog(fx, Sx, "ro", label = "PSD (Signal+ background) ")
 ax.loglog(fy, Sy, "go", label = "PSD (Background)")
 ax.set_xlabel(r'f(Hz)',  fontsize=15)
@@ -126,42 +119,55 @@ ax.set_xlim(0.001,10)
 #ax.set_ylim(10e-14, 10e-1)
 #ax.set_title("")
 ax.legend()
-mpl.rcParams['xtick.direction'] = 'in'
-mpl.rcParams['ytick.direction'] = 'in'
-mpl.rcParams['xtick.top'] = True
-mpl.rcParams['ytick.right'] = True
 plt.show()
-    
+
+# calculating the slope_alpha of the PSD
+f_list = []
+s_list = []
+for idx, freq in enumerate(fx):
+    if freq > 0.0 and freq <= 1.0:
+       f_list.append(freq)
+       s_list.append(S_n[idx])
+    else:
+        continue
+
+f_ = np.asarray(f_list)
+s_ = np.asarray(s_list)
+#print(f_)
+#sys.exit()
+slope, intercept, r_value, p_value, std_err = stats.linregress(np.log10(f_), np.log10(s_))
+print("."*30)
+print(r'The slope {}, standard error {}, and p-value {}'.format(slope, std_err, p_value))
+print("."*30)
+s_fit = slope*np.log10(f_) + intercept
+fig, ax = plt.subplots(1,1, figsize=(5, 5), dpi= 150)
+ax.plot(np.log10(f_), np.log10(s_), "go", label = "Normalise PSD")
+ax.plot(np.log10(f_), s_fit, color='r', label = r'slope: {} and std_er: {}'.format(round(slope, 3), round(std_err, 3)))
+ax.set_xlabel(r"$\log_{10}(f [Hz])$",  fontsize=10)
+ax.set_ylabel(r"$\log_{10}(S)$", fontsize=10)
+#ax.set_xlim(f.min(), f.max())
+#ax.set_ylim(10e-14, 10e-1)
+#ax.set_title("")
+ax.legend(loc="best")
+plt.show()   
+
+# creates the text file of calculated spectral density
+psd_file_name = input('Enter the name of the file to store calculated psd >>  ')
+FileToWrite = open(output_dir+ os.sep+ psd_file_name, 'w')
+FileToWrite.write("f" +"\t"+ "S_n" +"\t"+ "S_fit" +"\t"+ "alpha" +"\t"+ "alpha_er" + "\n" )
+for idx, freq in enumerate(f_):
+    FileToWrite.write(str(round(freq, 5)) +"\t "+ str(s_[idx]) +'\t'+ 
+    str(10**(s_fit[idx])) +'\t'+ str(round(slope,3)) +'\t'+ str(round(std_err, 3))+ '\n')       
+FileToWrite.close()
+
 # Plotting normalized-spectral density
-fig, ax = plt.subplots(1,1, figsize=(7, 7), dpi= 150)
-ax.loglog(fx, S_n, "ro", label = "Normalized-PSD")    
+fig, ax = plt.subplots(1,1, figsize=(5, 5), dpi= 150)
+ax.loglog(f_, f_*s_, "ro", label = "Normalized-PSD")    
 ax.set_xlabel(r'$f(Hz)$',  fontsize=15)
-ax.set_ylabel(r'$\frac{S_{V}}{V^{2}} (\frac{1}{Hz})$', fontsize=15)
-ax.set_xlim(0.001,10)
+ax.set_ylabel(r'$f*\frac{S_{V}}{V^{2}} (\frac{1}{Hz})$', fontsize=15)
+ax.set_xlim(0.001,1)
 #ax.set_ylim(10e-14, 10e-1)
 #ax.set_title("")
 ax.legend()
-mpl.rcParams['xtick.direction'] = 'in'
-mpl.rcParams['ytick.direction'] = 'in'
-mpl.rcParams['xtick.top'] = True
-mpl.rcParams['ytick.right'] = True
 plt.show()
     
-
-
-# creates the text file of calculated spectral density
-print('Enter the name of the file to store calculated psd: ')
-print('-'*25)
-psd_file_name = input()
-print('-'*25)
-FileToWrite = open(path_psd + os.sep+ psd_file_name, 'w')
-FileToWrite.write("frequency" + "\t " + "Sx" + "\t " + "Sy" + "\t "+
-                  "S(=Sx-Sy)" +"\t"+ "S(normalized)" +"\n" )
-for i in range(len(fx)):
-    if i == 0:
-        continue
-    else:
-        FileToWrite.write(str(fx[i]) +"\t "+ str(Sx[i]) +"\t "+ str(Sy[i]) 
-        +"\t "+ str(S[i]) +"\t "+ str(S_n[i]) +"\n")    
-FileToWrite.close()
-
