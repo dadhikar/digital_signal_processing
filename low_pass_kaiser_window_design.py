@@ -4,10 +4,7 @@ from __future__ import division
 import numpy as np
 import math
 
-
-
-def Kaiser_FIR(ripple, f_s, fp, fs):
-    
+def kaiser_FIR(ripple, f_s, fp, fs):
     """
     ripple : float
      (The desired attenuation in the stopband and maximum ripple in
@@ -53,7 +50,7 @@ def Kaiser_FIR(ripple, f_s, fp, fs):
     return h                              # Returns an windnow-sinc filter of length N. 
 
 
-def Kaiser_Beta(ripple):
+def kaiser_beta(ripple):
     
     """
     delta_factor : float
@@ -73,7 +70,7 @@ def Kaiser_Beta(ripple):
     return a, beta
 
 
-def Transition_Band(fp, fs, f_S):
+def transition_band(fp, fs, f_S):
     
     """
     fp = pass band frequency
@@ -87,7 +84,7 @@ def Transition_Band(fp, fs, f_S):
     return TB
 
 
-def Kaiser_Window_Length(ripple, fp, fs, f_s):
+def kaiser_window_length(ripple, fp, fs, f_s):
     
     """
     For given ripple and the normalized transition width (fs-fp)/fN,
@@ -113,7 +110,7 @@ D1 = 4   # first stage
 D2 = 2    # second stage
 D3 = 2     # third stage
 
-def Three_Stage_Decimation(x):
+def three_stage_decimation(x):
     
     """
     The initial sampling rate is 256 Hz, where the oversampling factor is 16. That means I have to 
@@ -126,7 +123,7 @@ def Three_Stage_Decimation(x):
     f_s = 256   # sampling frequency (in Hz)
     # fp = 8     pass band (in Hz)
     # fs = 128   stop band (in Hz)
-    window = Kaiser_FIR(0.01, 256, 8, 128)
+    window = kaiser_FIR(0.01, 256, 8, 128)
     x = np.convolve(x, window)
     x = x[::D1]
     f_s = f_s / D1     # new sampling frequency = 256 Hz/ 4 = 64 Hz
@@ -136,7 +133,7 @@ def Three_Stage_Decimation(x):
     # f_s = 64 Hz
     # fp =  8 Hz 
     # fs =  32 Hz 
-    window = Kaiser_FIR(0.01, 64, 8, 32)
+    window = kaiser_FIR(0.01, 64, 8, 32)
     x = np.convolve(x, window)
     x = x[::D2]
     f_s = f_s/ D2  # new sampling frequency f_s = 64 Hz/ 2 = 32 Hz    
@@ -146,7 +143,7 @@ def Three_Stage_Decimation(x):
     # f_s = 32 Hz
     # fp = 8 Hz
     # fs = 16 Hz
-    window = Kaiser_FIR(0.01, 32, 8, 16)
+    window = kaiser_FIR(0.01, 32, 8, 16)
     x = np.convolve(x, window)
     # Now the sampling frequency reduces to 16 Hz meaning 8 Hz bandwidth
     x = x[::D3]
