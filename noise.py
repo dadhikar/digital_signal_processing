@@ -12,7 +12,7 @@ import math
 from scipy import signal
 from scipy import stats
 #from file_converter import itx_to_txt_converter
-from Kaiser_Window_Design import Kaiser_FIR, Three_Stage_Decimation
+from kaiser_window_design import kaiser_FIR, three_stage_decimation
 
 # specifies the location of the raw data    
 #path_raw = "/Users/dadhikar/Desktop/rawdata/"
