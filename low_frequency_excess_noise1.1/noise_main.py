@@ -4,7 +4,6 @@
 
 import os
 import sys
-import math
 from scipy import signal
 from scipy import stats
 import numpy as np
@@ -15,8 +14,8 @@ mpl.rcParams['ytick.direction'] = 'in'
 mpl.rcParams['xtick.top'] = True
 mpl.rcParams['ytick.right'] = True
 from file_format_converter import itx_to_txt_converter
-from low_pass_kaiser_window_design import kaiser_FIR, three_stage_decimation
-
+from low_pass_kaiser_window_design import  three_stage_decimation
+from psd_slope_alpha import alpha_calculate
 file_convert = False
 # specify the location of the raw data
 path_raw = "/Users/dadhikar/Box Sync/CuIr2S4/Experiment_104/"
@@ -26,8 +25,6 @@ if file_convert:
     print("Converting file format")
     itx_to_txt_converter(path_raw, path_text)
 
-# Directory for estimted power spectral density
-output_dir = "/Users/dadhikar/Downloads/Experiment_104/PSD_cooling"
 
 file_list = sorted(os.listdir(path_text))
 print('-'*25)
@@ -162,97 +159,82 @@ fx, Sx = power_spectrum_density(vx)
 # spectral density estimation form vy data
 fy, Sy = power_spectrum_density(vy)
 
+# not selecting zero frequency component
+fx = fx[1:]
+fy = fy[1:]
+Sx = Sx[1:]
+Sy = Sy[1:]
 
-def psd_plot(fx, Sx, fy, Sy, plot=True):
+
+def psd_plot(plot=True):
     if plot:
-        # Plotting time series
         fig, ax = plt.subplots(1, 1, figsize=(10, 10), dpi=150)
-        # Remove any trend present on  vx and vy fluctuations.
-        ax.loglog(fx, Sx, c="r", label="PSD (signal + background)")
-        ax.loglog(fy, Sy, c="g", label="Background only")
-        ax.set_xlabel(r'f [Hz]',  fontsize=15)
+        ax.loglog(fx, Sx, c="r", lw=2.0, label="PSD (signal + background)")
+        ax.loglog(fy, Sy, c="g", lw=2.0, label="Background only")
+        ax.set_xlabel(r'f [Hz]', fontsize=15)
         ax.set_ylabel(r'S$_{v}$ [$\frac{V^{2}}{Hz}$]', fontsize=15)
-        # ax.set_xlim(0.001,1)
+        # ax.set_xlim(f.min(), f.max())
         # ax.set_ylim(10e-14, 10e-1)
-        # ax.set_facecolor('xkcd:salmon')
+        # ax.set_title("")
         ax.set_title('Power Spectral Density')
         ax.legend(loc='best')
         plt.show()
 
-
-psd_plot(fx, Sx, fy, Sy)
-sys.exit()
+psd_plot(plot=True)
 
 
-S = abs( Sx - Sy )  # Power spectral density of the sample signal
 
+# Power spectral density of the sample signal
+# S = abs(Sx - Sy)  
 # Calculating normalized spectrum
-vosc = float(input("Enter the value of oscillating voltage >>  "))
-Rb = float(input("Enter the value of balancing resistance >>  "))
-
+Vosc = float(input("Enter the value of oscillating voltage >>  "))
+RB = float(input("Enter the value of balancing resistance >>  "))
+R1 = 1000.0
 # Gives the oscillating voltage drop in the sample
-vs = vosc/(1 + (1000./Rb))
+Vs = Vosc / (1 + (R1 / RB))
 # Calculates the normalized spectrum density   
-S_n = S/vs**2               
-# Plotting spectral density
-fig, ax = plt.subplots(1,1, figsize=(5, 5), dpi= 150)
-ax.loglog(fx, Sx, "ro", label = "PSD (Signal+ background) ")
-ax.loglog(fy, Sy, "go", label = "PSD (Background)")
-ax.set_xlabel(r'f(Hz)',  fontsize=15)
-ax.set_ylabel(r'$ S_{V} (\frac{V^{2}}{Hz})$', fontsize=15)
-ax.set_xlim(0.001,10)
-#ax.set_ylim(10e-14, 10e-1)
-#ax.set_title("")
-ax.legend()
-plt.show()
+S_n = Sx/(Vs**2) 
 
-# calculating the slope_alpha of the PSD
-f_list = []
-s_list = []
-for idx, freq in enumerate(fx):
-    if freq > 0.0 and freq <= 1.0:
-       f_list.append(freq)
-       s_list.append(S_n[idx])
-    else:
-        continue
 
-f_ = np.asarray(f_list)
-s_ = np.asarray(s_list)
-#print(f_)
-#sys.exit()
-slope, intercept, r_value, p_value, std_err = stats.linregress(np.log10(f_), np.log10(s_))
-print("."*30)
-print(r'The slope {}, standard error {}, and p-value {}'.format(slope, std_err, p_value))
-print("."*30)
-s_fit = slope*np.log10(f_) + intercept
-fig, ax = plt.subplots(1,1, figsize=(5, 5), dpi= 150)
-ax.plot(np.log10(f_), np.log10(s_), "go", label = "Normalise PSD")
-ax.plot(np.log10(f_), s_fit, color='r', label = r'slope: {} and std_er: {}'.format(round(slope, 3), round(std_err, 3)))
-ax.set_xlabel(r"$\log_{10}(f [Hz])$",  fontsize=10)
-ax.set_ylabel(r"$\log_{10}(S)$", fontsize=10)
-#ax.set_xlim(f.min(), f.max())
-#ax.set_ylim(10e-14, 10e-1)
-#ax.set_title("")
-ax.legend(loc="best")
-plt.show()   
+def psd_n_plot(plot=True):
+    if plot:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10), dpi=150)
+        ax.loglog(fx, S_n, c="r", lw=2.0, label="PSD (signal + background)")
+        ax.set_xlabel(r'f [Hz]', fontsize=15)
+        ax.set_ylabel(r'S$_{v}$ [$\frac{1}{Hz}$]', fontsize=15)
+        # ax.set_xlim(f.min(), f.max())
+        # ax.set_ylim(10e-14, 10e-1)
+        # ax.set_title("")
+        ax.set_title('Normalized Power Spectral Density')
+        ax.legend(loc='best')
+        plt.show()
 
-# creates the text file of calculated spectral density
-psd_file_name = input('Enter the name of the file to store calculated psd >>  ')
-FileToWrite = open(output_dir+ os.sep+ psd_file_name, 'w')
-FileToWrite.write("f" +"\t"+ "S_n" +"\t"+ "S_fit" +"\t"+ "alpha" +"\t"+ "alpha_er" + "\n" )
-for idx, freq in enumerate(f_):
-    FileToWrite.write(str(round(freq, 5)) +"\t "+ str(s_[idx]) +'\t'+ 
-    str(10**(s_fit[idx])) +'\t'+ str(round(slope,3)) +'\t'+ str(round(std_err, 3))+ '\n')       
-FileToWrite.close()
 
-# Plotting normalized-spectral density
-fig, ax = plt.subplots(1,1, figsize=(5, 5), dpi= 150)
-ax.loglog(f_, f_*s_, "ro", label = "Normalized-PSD")    
-ax.set_xlabel(r'$f(Hz)$',  fontsize=15)
-ax.set_ylabel(r'$f*\frac{S_{V}}{V^{2}} (\frac{1}{Hz})$', fontsize=15)
-ax.set_xlim(0.001,1)
-#ax.set_ylim(10e-14, 10e-1)
-#ax.set_title("")
-ax.legend()
-plt.show()
+psd_n_plot(plot=True)
+              
+
+# alpha_calculate gives frequency exponent, slope 
+f_range = [fx.min(), 1.0]
+slope, intercept, std_err = alpha_calculate(f=fx, S=S_n, f_range=f_range)
+
+f_new = np.linspace(0.001, 1.0, 256)
+f_new = np.log10(f_new)
+S_new = slope*f_new + intercept
+S_new = 10**S_new
+f_new = 10**f_new
+
+# directory for estimted power spectral density files
+output_dir = "/Users/dadhikar/Box Sync/CuIr2S4/Experiment_104/PSD_cooling/"
+
+def psd_file(_write=True):
+    if _write:
+        # creates the text file of calculated spectral density
+        psd_file_name = 'PSD_'+file_to_read
+        FileToWrite = open(output_dir + os.sep + psd_file_name, 'w')
+        FileToWrite.write("f" + "\t" + "S_fit" + "\n" )
+        for idx, freq in enumerate(f_new):
+            FileToWrite.write(str(round(freq, 5)) + "\t " + str(S_new[idx]) 
+                              + "\n")       
+        FileToWrite.close()
+psd_file(_write=True)
     
