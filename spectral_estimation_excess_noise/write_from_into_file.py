@@ -14,8 +14,8 @@ mpl.rcParams['xtick.top'] = True
 mpl.rcParams['ytick.right'] = True
 
 # file location
-pathin = "/home/dadhikar/Desktop/__CuIr2S4_V2__/Thermal driven study/Thermal noise/text_file/Cooling/"
-pathout = "/home/dadhikar/Desktop/__CuIr2S4_V2__/Thermal driven study/Thermal noise/text_file/Cooling/time_series/"
+pathin = " "
+pathout = " "
 
 # reading data from the file (filename) in file_path
 def read_file(filename, a, b):
@@ -29,15 +29,16 @@ def csv_file_read(filename, a):
     Reading column of filename using read_csv() 
     and return them
     """
-    dataframe = pd.read_csv(pathin + os.sep+ filename, delimiter=None, header=None, names=None, 
-                            index_col=None, usecols=[a], skiprows=1, skipfooter=0, nrows=None)  
+    dataframe = pd.read_csv(pathin + os.sep+ filename, delimiter=None,
+                            header=None, names=None, index_col=None,
+                            usecols=[a], skiprows=1, skipfooter=0, nrows=None)  
     x1 = dataframe.iloc[:, 0]           
     return x1 
 
 
-#..............................................................................................
+#.......................................................................
 file = input("Name the input file with format:  ") # enter the file name
-#..............................................................................................
+#.......................................................................
 
 t, dvx = read_file(file, 0, 1)
 
@@ -45,9 +46,9 @@ t, dvx = read_file(file, 0, 1)
 dvx = signal.detrend(dvx, type='linear')
 
 # creating new file and write i  and t 
-#..............................................................................................
+#........................................................................
 filename = input("Name the output file with format:  ") # enter the file name
-#..............................................................................................
+#........................................................................
 file1 = open(pathout + os.sep + filename, 'w')
 file1.write('time(s)' + '\t' + 'dR/R (*10**(-3))' + '\n')
 

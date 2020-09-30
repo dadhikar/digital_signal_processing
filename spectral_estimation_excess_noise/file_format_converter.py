@@ -1,8 +1,13 @@
 """Created on Thu May 17 14:15:43 2018 @author: Dasharath Adhikari"""
 
 import os
-import sys
 
+class dir_config:
+    # directory for raw experimental datafiles in itx format
+    path_raw = " "
+    # directory of the converted experimental file in text-file format
+    path_text = " "
+    
 
 def itx_to_txt_converter(raw_data_path, text_data_path):
     """
@@ -27,7 +32,8 @@ def itx_to_txt_converter(raw_data_path, text_data_path):
                 # create text file in the text_data_path folder
                 # file name will be VT followed by line count value
                 FileToWriteInto = open(text_data_path + os.sep +
-                                       'VT'+str(linecount)+'.txt', 'w')
+                                       'VT'+ str(linecount).zfill(3)+'.txt',
+                                       'w')
                 FileToWriteInto.write('time_s' + '\t' + 'Vx_V' + '\t' +
                                       'v_y (V)' + '\n')
                 for line in range(len(split_lines)):
@@ -43,3 +49,12 @@ def itx_to_txt_converter(raw_data_path, text_data_path):
                         FileToWriteInto.write(final_string + '\n')
                 FileToWriteInto.close()
             linecount += 1
+
+
+if __name__ == "__main__":
+    itx_to_txt_converter(raw_data_path = dir_config.path_raw,
+                         text_data_path = dir_config.path_text)
+
+
+
+__all__ = ["itx_to_txt_converter"]

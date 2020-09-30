@@ -136,3 +136,6 @@ def three_stage_decimation(x, f_s, f_pass_final, D1, D2, D3):
     x = x[::int(D3)]
     # final sampling frequency will be f_s /D3
     return x
+
+
+__all__ = ['three_stage_decimation', 'kaiser_FIR']

@@ -69,5 +69,4 @@ def alpha_calculate(f, S, f_range):
 
 
 
-    
-   
+__all__ = ["alpha_calculate"]

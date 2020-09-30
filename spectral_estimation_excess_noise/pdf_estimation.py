@@ -23,7 +23,9 @@ def read_file(filename, a, b):
                         usecols=[a,b], unpack=True)
     return x0, x1
 
-file = input("Enter the name of the file with format:  ") # enter the file name
+
+# enter the file name
+file = input("Enter the name of the file with format:  ") 
 
 # t is the time 
 # dvx in phase voltage fluctuation  data
@@ -50,7 +52,8 @@ dvx_n = dvx/vosc
 dvx_n *= 10**(5)
 
 # creating figure and axis instance
-fig, ax = plt.subplots(nrows=1, ncols=1, sharex=False, sharey=False, figsize = (5,5), dpi = 200)
+fig, ax = plt.subplots(nrows=1, ncols=1, sharex=False, sharey=False,
+                       figsize = (5,5), dpi = 200)
 
 # non-parametric pdf estimation
 kde_density = gaussian_kde(dvx_n, bw_method=None, weights=None)
@@ -68,9 +71,11 @@ ax.plot(bin_range, param_density, 'k--', label='Gaussian fit')
 # histogram for the time series data
 #bins = np.linspace(dvx_n.min(), dvx_n.max(), 100)
 #bin_centers = 0.5*(bins[1:] + bins[:-1])
-ax.hist(dvx_n, bins=bin_range, density=True, weights=None, cumulative=False, bottom=None,
-         histtype='stepfilled', align='mid', orientation='vertical', rwidth=None, log=False, 
-        stacked=False, normed=None, data=None,  color='green', label = 'Histogram', alpha = 0.5 )
+ax.hist(dvx_n, bins=bin_range, density=True, weights=None, cumulative=False,
+        bottom=None, histtype='stepfilled', align='mid',
+        orientation='vertical', rwidth=None, log=False, stacked=False,
+        normed=None, data=None,  color='green', label = 'Histogram',
+        alpha = 0.5 )
 
 ax.set_ylabel('Probability density function')
 ax.set_xlabel(r'$\frac{\delta R}{R}[* 10^{-5}]$')
@@ -78,21 +83,20 @@ ax.legend()
 plt.show()
 
 
-# -------------------------------------------------------------------------------------------------- 
+
 # writing estimated pdf data into a  file
 
 File_Name = input('Enter the filename:  ')
-FileToWrite = open ("/home/dadhikar/Desktop/__CuIr2S4_V2__/Thermal driven study/pdf/" + os.sep + 
+FileToWrite = open (" " + os.sep + 
                     File_Name, 'w')
-FileToWrite.write('bins (*10**(-5))' +'\t'+ 'npara_density' +'\t'+ 'para_density' + '\n')
+FileToWrite.write('bins' +'\t'+ 'npara_density' +'\t'+ 'para_density' + '\n')
 
 for i in range(len(bin_range)):
-    FileToWrite.write(str(bin_range[i]) +'\t'+ str(nparam_density[i]) +'\t'+ str(param_density[i]) 
-                                                                                              +'\n')
+    FileToWrite.write(str(bin_range[i]) +'\t'+ str(nparam_density[i])
+                      +'\t'+ str(param_density[i]) +'\n')
 
 FileToWrite.close()
 
-# --------------------------------------------------------------------------------------------------
 
 
 

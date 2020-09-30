@@ -1,7 +1,14 @@
-"""Initial creation date Tue Nov 13 14:30:27 2018
-   @author: Dasharath Adhikari
 """
+Initial creation date Tue Nov 13 14:30:27 2018
+@author: Dasharath Adhikari
 
+Important:
+       you need to specify
+       1) location of experimental data files = 'path_raw'
+       2) location where you want to store the converted files = 'path_text' 
+       3) location where you want to stor PSD files = 'path_PSD'
+   
+"""
 import os
 import sys
 from scipy import signal
@@ -16,20 +23,32 @@ mpl.rcParams['ytick.right'] = True
 from file_format_converter import itx_to_txt_converter
 from low_pass_kaiser_window_design import  three_stage_decimation
 from psd_slope_alpha import alpha_calculate
+
+
+
+class dir_config:
+    # directory for raw experimental datafiles in itx format
+    path_raw = " "
+    # directory of the converted experimental file in text-file format
+    path_text = " "
+    # directory of estimted power spectral density files for each runs
+    path_PSD = " "
+
+# print(os.listdir(path_text))                  
 file_convert = False
-# specify the location of the raw data
-path_raw = "/Users/dadhikar/Box Sync/CuIr2S4/Experiment_104/"
-# specify the file location for the converted text file
-path_text = "/Users/dadhikar/Box Sync/CuIr2S4/Experiment_104/Thermal_noise_D2/"
+
 if file_convert:
-    print("Converting file format")
-    itx_to_txt_converter(path_raw, path_text)
+  print("Converting file format")
+  itx_to_txt_converter(raw_data_path=dir_config.path_raw,
+                       text_data_path= dir_config.path_text)
 
 
-file_list = sorted(os.listdir(path_text))
+file_list = sorted(os.listdir(dir_config.path_text))
 print('-'*25)
 print('The file list: ', file_list)
 print('-'*25)
+
+#sys.exit()
 
 file_to_read = input('Enter the name of the file to read data from >>  ')
 
@@ -44,7 +63,7 @@ def read_file(filepath, filename, a, b, c):
 # t = time
 # vx = in-phase fluctuation signal
 # vy = out-of-phase fluctuation signal
-t, vx, vy = read_file(path_text, file_to_read, 0, 1, 2)
+t, vx, vy = read_file(dir_config.path_text, file_to_read, 0, 1, 2)
 
 
 # plot the time series if plot is set True
@@ -180,7 +199,7 @@ def psd_plot(plot=True):
         ax.legend(loc='best')
         plt.show()
 
-psd_plot(plot=True)
+psd_plot(plot=False)
 
 
 
@@ -194,14 +213,15 @@ R1 = 1000.0
 Vs = Vosc / (1 + (R1 / RB))
 # Calculates the normalized spectrum density   
 S_n = Sx/(Vs**2) 
-
+Sy_n = Sy/(Vs**2)
 
 def psd_n_plot(plot=True):
     if plot:
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10), dpi=150)
-        ax.loglog(fx, S_n, c="r", lw=2.0, label="PSD (signal + background)")
-        ax.set_xlabel(r'f [Hz]', fontsize=15)
-        ax.set_ylabel(r'S$_{v}$ [$\frac{1}{Hz}$]', fontsize=15)
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7), dpi=150)
+        ax.loglog(fx, S_n, c="r", lw=1.5, label="PSD (X-channel)")
+        ax.loglog(fy, fy*Sy_n, c="k", lw=1.5, label="PSD (Y-channel)")
+        ax.set_xlabel(r'f [Hz]', fontsize=14)
+        ax.set_ylabel(r'$\frac{S_{R}}{R^{2}}$ [Hz$^{-1}$]', fontsize=14)
         # ax.set_xlim(f.min(), f.max())
         # ax.set_ylim(10e-14, 10e-1)
         # ax.set_title("")
@@ -214,27 +234,34 @@ psd_n_plot(plot=True)
               
 
 # alpha_calculate gives frequency exponent, slope 
-f_range = [fx.min(), 1.0]
+f_range = [fx.min(), 1]
+# f_range = [0.01, 8.0]
 slope, intercept, std_err = alpha_calculate(f=fx, S=S_n, f_range=f_range)
 
-f_new = np.linspace(0.001, 1.0, 256)
+print('*'*20)
+print('PSD at f = 0.01 is {}'.format(S_n[np.where(fx==0.01)]))
+print('PSD at f = 0.1 is {}'.format(S_n[np.where(fx==0.1)]))
+print('PSD at f = 1.0 is {}'.format(S_n[np.where(fx==1.0)]))
+print('*'*20)
+
+
+sys.exit()
+
+f_new = np.linspace(0.001, 0.1, 256)
 f_new = np.log10(f_new)
 S_new = slope*f_new + intercept
 S_new = 10**S_new
 f_new = 10**f_new
 
-# directory for estimted power spectral density files
-output_dir = "/Users/dadhikar/Box Sync/CuIr2S4/Experiment_104/PSD_cooling/"
 
 def psd_file(_write=True):
     if _write:
         # creates the text file of calculated spectral density
         psd_file_name = 'PSD_'+file_to_read
-        FileToWrite = open(output_dir + os.sep + psd_file_name, 'w')
+        FileToWrite = open(dir_config.path_PSD + os.sep + psd_file_name, 'w')
         FileToWrite.write("f" + "\t" + "S_fit" + "\n" )
         for idx, freq in enumerate(f_new):
             FileToWrite.write(str(round(freq, 5)) + "\t " + str(S_new[idx]) 
                               + "\n")       
         FileToWrite.close()
 psd_file(_write=True)
-    
